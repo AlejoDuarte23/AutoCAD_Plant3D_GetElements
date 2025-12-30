@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+
+    <!-- Your downloaded SDK folder -->
+    <PlantSdkDir>C:\Users\aleja\Documents\AutoCAD Plant 3D 2026 SDK\inc-x64\</PlantSdkDir>
+
+    <!-- Default install folders (adjust only if your install path is different) -->
+    <AcadDir>C:\Program Files\Autodesk\AutoCAD 2026\</AcadDir>
+    <PlantDir>C:\Program Files\Autodesk\AutoCAD 2026\PLNT3D\</PlantDir>
+
+    <!-- Optional: avoids extra net8.0-windows subfolder if you prefer -->
+    <!-- <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath> -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- AutoCAD .NET API (Copy Local = No / Private=false) -->
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(AcadDir)AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(AcadDir)AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcMgd">
+      <HintPath>$(AcadDir)AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Plant 3D APIs -->
+    <Reference Include="PnPProjectManagerMgd">
+      <HintPath>$(PlantDir)PnPProjectManagerMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PnPDataLinks">
+      <HintPath>$(PlantSdkDir)PnPDataLinks.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PnPCommonMgd">
+      <HintPath>$(PlantSdkDir)PnPCommonMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PnP3dDataLinkManager">
+      <HintPath>$(PlantSdkDir)PnP3dDataLinkManager.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Only keep these if you truly use types from them -->
+    <Reference Include="PnP3dProjectPartsMgd">
+      <HintPath>$(PlantDir)PnP3dProjectPartsMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PnIdProjectPartsMgd">
+      <HintPath>$(PlantDir)PnIdProjectPartsMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Your current code does NOT use COM Interop; do not reference Autodesk.AutoCAD.Interop*.dll -->
+    <!-- Do not reference *res.dll like AcAxDb25res.dll -->
+  </ItemGroup>
+
+</Project>
