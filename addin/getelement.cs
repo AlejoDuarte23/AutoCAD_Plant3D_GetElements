@@ -104,7 +104,15 @@ namespace PlantJsonExporter
             writer.WriteStartObject();
             writer.WriteString("path", dwgPath);
 
-            if (!File.Exists(dwgPath))
+            var (resolvedPath, resolutionNote) = ResolveDrawingPath(plantPrj.ProjectFolderPath, dwgPath);
+
+            if (!string.Equals(resolvedPath, dwgPath, StringComparison.OrdinalIgnoreCase))
+                writer.WriteString("resolvedPath", resolvedPath);
+
+            if (!string.IsNullOrWhiteSpace(resolutionNote))
+                writer.WriteString("pathResolution", resolutionNote);
+
+            if (!File.Exists(resolvedPath))
             {
                 writer.WriteString("error", "File not found on disk (not available locally).");
                 writer.WriteEndObject();
@@ -115,7 +123,7 @@ namespace PlantJsonExporter
 
             try
             {
-                doc = docMan.Open(dwgPath, false);
+                doc = docMan.Open(resolvedPath, false);
 
                 using (doc.LockDocument())
                 {
@@ -132,6 +140,64 @@ namespace PlantJsonExporter
                 writer.WriteString("error", ex.Message);
                 writer.WriteEndObject();
             }
+        }
+
+        private static (string resolvedPath, string? note) ResolveDrawingPath(string projectRoot, string pathFromProject)
+        {
+            if (File.Exists(pathFromProject))
+                return (pathFromProject, null);
+
+            if (string.IsNullOrWhiteSpace(projectRoot))
+                return (pathFromProject, null);
+
+            var root = Path.GetFullPath(projectRoot);
+
+            // Split into parts using both separators
+            var parts = pathFromProject
+                .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                    StringSplitOptions.RemoveEmptyEntries)
+                .ToArray();
+
+            // Try to anchor on a folder name that exists under the current project root
+            // Example: ...\PID DWG\X.dwg -> <root>\PID DWG\X.dwg
+            for (int i = parts.Length - 2; i >= 0; i--)
+            {
+                var dirName = parts[i];
+                var candidateDir = Path.Combine(root, dirName);
+                if (!Directory.Exists(candidateDir))
+                    continue;
+
+                var tail = Path.Combine(parts.Skip(i).ToArray());
+                var candidate = Path.Combine(root, tail);
+
+                if (File.Exists(candidate))
+                    return (candidate, $"Remapped under project folder using '{dirName}'.");
+            }
+
+            // Fallback: search by filename inside the project folder
+            var fileName = Path.GetFileName(pathFromProject);
+            if (string.IsNullOrWhiteSpace(fileName))
+                return (pathFromProject, null);
+
+            try
+            {
+                var matches = Directory
+                    .EnumerateFiles(root, fileName, SearchOption.AllDirectories)
+                    .Take(10)
+                    .ToList();
+
+                if (matches.Count == 1)
+                    return (matches[0], "Found by filename search under project folder.");
+
+                if (matches.Count > 1)
+                    return (pathFromProject, $"Multiple matches for '{fileName}' under project folder; not auto-resolving.");
+            }
+            catch
+            {
+                // ignore search errors
+            }
+
+            return (pathFromProject, null);
         }
 
         private static void ExportOpenedDrawing(Utf8JsonWriter writer, Document doc, PlantProject plantPrj)
